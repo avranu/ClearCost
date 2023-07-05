@@ -9,7 +9,7 @@ class ClearCost {
   constructor() {
     this.addStyle(`
       .clearcost.low-opacity {
-        opacity: 0.4;
+        //opacity: 0.4;
       }
       .clearcost.chip {
         display: inline-block;
@@ -23,25 +23,46 @@ class ClearCost {
         margin-right: 8px;
       }
     `);
+	// liquids are conversion factors to a liter
     this.conversionFactors = {
-      'pt': 2,
-      'qt': 1,
-      'gallon': 0.120095,
-      'liter': 2.20462,
+	  'fl oz': 0.0295735,
+	  'pt': 0.473176,
+	  'qt': 0.946353,
+	  'gallon': 3.78541,
+	  'liter': 1,
       'oz': 0.0625,
       'gram': 0.00220462,
       'kg': 2.20462,
-      'lb': 1
+      'lb': 1,
+	  'pound': 1,
     };
+	this.unitSynonyms = {
+		'pound': 'lb',
+		'gallon': 'gal',
+		'pnt': 'pt',
+		'quart': 'qt',
+		'ounce': 'oz',
+		'gram': 'g',
+		'kilogram': 'kg',
+		'cent': '¢',
+		'cents': '¢',
+		'dollar': '$',
+		'dollars': '$',
+		'lter': 'liter',
+		'ltr': 'liter',
+
+	};
     this.unitTypes = {
+	  'fl oz': 'liquid',
       'pt': 'liquid',
       'qt': 'liquid',
       'gallon': 'liquid',
       'liter': 'liquid',
-      'oz': 'solid',
+      'oz': 'solid', 
       'gram': 'solid',
       'kg': 'solid',
-      'lb': 'solid'
+      'lb': 'solid',
+	  'pound': 'solid',
     };
   }
 
@@ -72,12 +93,18 @@ class ClearCost {
   }
 
   parsePriceAndUnit(text) {
-    const regex = /\$?(\d+(\.\d+)?)\s*(c|cents?|¢)?\s*(per|[/\\])\s*(oz|pt|qt|gallon|liter|gram|kg|lb)/i;
+    const regex = /\$?(\d+(\.\d+)?)\s*(c|cents?|¢)?\s*(per|[/\\])\s*(fl oz|oz|ounce|pi?n?t|qr?t|gal|gall?on|li?ter|gra?m|kg|lb|pound)/i;
     const match = text.match(regex);
     if (match && match[0] === text) {
       let price = parseFloat(match[1]);
 	  let priceunit = (match[3] || 'dollars').toLowerCase();
       let unit = match[5].toLowerCase();
+
+	  // Convert synonyms to standard units
+	  if (this.unitSynonyms[priceunit]) {
+		  priceunit = this.unitSynonyms[priceunit];
+	  }
+
       // Convert cents to dollars
       if (priceunit === 'c' || priceunit === 'cents' || priceunit === '¢') {
         price /= 100;
