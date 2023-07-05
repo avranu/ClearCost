@@ -7,19 +7,41 @@
 
 class ClearCost {
   constructor() {
-    GM_addStyle("@import url('https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css')");
-    GM_addStyle("@import url('https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css')");
-
-    this.addStyle(".low-opacity { opacity: 0.3; }");
+    this.addStyle(`
+      .clearcost.low-opacity {
+        opacity: 0.4;
+      }
+      .clearcost.chip {
+        display: inline-block;
+        height: 32px;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 32px;
+        padding: 0 12px;
+        border-radius: 16px;
+        background-color: #e4e4e4;
+        margin-right: 8px;
+      }
+    `);
     this.conversionFactors = {
-      'oz': 16,
       'pt': 2,
       'qt': 1,
       'gallon': 0.120095,
       'liter': 2.20462,
+      'oz': 0.0625,
       'gram': 0.00220462,
       'kg': 2.20462,
       'lb': 1
+    };
+    this.unitTypes = {
+      'pt': 'liquid',
+      'qt': 'liquid',
+      'gallon': 'liquid',
+      'liter': 'liquid',
+      'oz': 'solid',
+      'gram': 'solid',
+      'kg': 'solid',
+      'lb': 'solid'
     };
   }
 
@@ -37,21 +59,31 @@ class ClearCost {
     return pricePerUnit.toFixed(2);
   }
 
-  addPriceTag(element, pricePerLb, originalUnit) {
+  addPriceTag(element, pricePerUnit, originalUnit) {
+    const unitType = this.unitTypes[originalUnit];
+    const finalUnit = (unitType === 'liquid') ? 'liter' : 'lb';
     const priceTag = document.createElement('div');
-    priceTag.textContent = ` (${pricePerLb}/lb)`;
-    priceTag.classList.add('chip', 'blue', 'animate__animated', 'animate__fadeIn');
-    if (originalUnit === 'lb') {
+    priceTag.textContent = ` (${pricePerUnit}/${finalUnit})`;
+    priceTag.classList.add('clearcost', 'chip', 'blue', 'animate__animated', 'animate__fadeIn');
+    if (originalUnit === finalUnit) {
       priceTag.classList.add('low-opacity');
     }
     element.parentNode.insertBefore(priceTag, element.nextSibling);
   }
 
   parsePriceAndUnit(text) {
-    const regex = /\$?(\d+(\.\d+)?)\s*(per)?\s*(oz|pt|qt|gallon|liter|gram|kg|lb)/i;
+    const regex = /\$?(\d+(\.\d+)?)\s*(c|cents?|¢)?\s*(per|[/\\])\s*(oz|pt|qt|gallon|liter|gram|kg|lb)/i;
     const match = text.match(regex);
-    if (match && match[0] === text) { // check if the element's text content exactly matches the price and unit format
-      return { price: parseFloat(match[1]), unit: match[4].toLowerCase() };
+    if (match && match[0] === text) {
+      let price = parseFloat(match[1]);
+	  let priceunit = (match[3] || 'dollars').toLowerCase();
+      let unit = match[5].toLowerCase();
+      // Convert cents to dollars
+      if (priceunit === 'c' || priceunit === 'cents' || priceunit === '¢') {
+        price /= 100;
+        priceunit = 'dollar';
+      }
+      return { price: price, unit: unit };
     } else {
       return null;
     }
@@ -61,20 +93,20 @@ class ClearCost {
     const priceAndUnit = this.parsePriceAndUnit(element.textContent);
     if (priceAndUnit) {
       try {
-        const pricePerLb = this.convertTo(priceAndUnit.price, priceAndUnit.unit);
-        this.addPriceTag(element, pricePerLb, priceAndUnit.unit);
+        const pricePerUnit = this.convertTo(priceAndUnit.price, priceAndUnit.unit);
+        this.addPriceTag(element, pricePerUnit, priceAndUnit.unit);
       } catch (error) {
         console.error(`Failed to process element`, element, error);
       }
     }
- }
+  }
 
   scanPage() {
-    const elements = document.querySelectorAll('body *:not(:empty)'); // updated the selector to only select non-empty elements
+    const elements = document.querySelectorAll('body *:not(:empty)');
     for (let i = 0; i < elements.length; i++) {
       window.requestAnimationFrame(() => this.processElement(elements[i]));
     }
   }
 }
 
-//new ClearCost().scanPage();
+new ClearCost().scanPage();
