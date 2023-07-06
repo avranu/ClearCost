@@ -38,6 +38,7 @@ class ClearCost {
 	  'kg': 2.20462,
 	  'lb': 1,
 	  'pound': 1,
+	  'each': 1,
 	};
 	this.unitSynonyms = {
 		'pound': 'lb',
@@ -53,7 +54,9 @@ class ClearCost {
 		'dollars': '$',
 		'lter': 'liter',
 		'ltr': 'liter',
-
+		'count': 'each',
+		'ct': 'each',
+		'cnt': 'each',
 	};
 	this.unitTypes = {
 	  'fl oz': 'liquid',
@@ -66,6 +69,7 @@ class ClearCost {
 	  'kg': 'solid',
 	  'lb': 'solid',
 	  'pound': 'solid',
+	  'each': 'count',
 	};
 	this.num_tags = 0;
   }
@@ -95,7 +99,7 @@ class ClearCost {
 		return;
 	}
 	const unitType = this.unitTypes[originalUnit];
-	const finalUnit = (unitType === 'liquid') ? 'liter' : 'lb';
+	const finalUnit = (unitType === 'liquid') ? 'liter' : (unitType === 'solid') ? 'lb' : 'each';
 	const priceTag = document.createElement('div');
 	priceTag.textContent = ` ($${pricePerUnit}/${finalUnit})`;
 	priceTag.classList.add('clearcost', 'chip', 'blue', 'animate__animated', 'animate__fadeIn');
@@ -103,7 +107,7 @@ class ClearCost {
 	  priceTag.classList.add('low-opacity');
 	}
 	element.parentNode.insertBefore(priceTag, element.nextSibling);
-	console.log('Added a price tag to ', element);
+	console.debug('Added a price tag to ', element);
 	this.num_tags++;
   }
 
@@ -123,7 +127,7 @@ class ClearCost {
 	}
 
 	// Next, find the unit and its quantity
-	const unitRegex = /(\d+(\.\d+)?)\s*(fl oz|oz|ounce|pi?n?t|qr?t|gal|gall?on|li?ter|gra?m|kg|lb|pound)s?\b/i;
+	const unitRegex = /(\d+(\.\d+)?)\s*(fl oz|oz|ounce|pi?n?t|qr?t|gal|gall?on|li?ter|gra?m|kg|lb|pound|count|ct|cnt|each)s?\b/i;
 	const unitMatch = text.match(unitRegex);
 	if (!unitMatch) {
 		return null;
@@ -146,7 +150,7 @@ class ClearCost {
   }
 
   getPricePerUnit(text) {
-	const regex = /\$?(\d+(\.\d+)?)\s*(c|cents?|¢)?\s*(per|[/\\])\s*(fl oz|oz|ounce|pi?n?t|qr?t|gal|gall?on|li?ter|gra?m|kg|lb|pound)/i;
+	const regex = /\$?(\d+(\.\d+)?)\s*(c|cents?|¢)?\s*(per|[/\\])\s*(fl oz|oz|ounce|pi?n?t|qr?t|gal|gall?on|li?ter|gra?m|kg|lb|pound|count|ct|cnt|each)/i;
 	const match = text.match(regex);
 	if (!match) {
 		return null;
